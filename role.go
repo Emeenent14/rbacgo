@@ -1,61 +1,58 @@
 package rbacgo
 
-import "fmt"
+import (
+	"errors"
+)
 
-type permssion[T comparable] map[T]struct{}
+// Fixed typo in name and made it consistent
+type permission[T comparable] map[T]struct{}
 
-type Role struct {
-	roleId T
-	permissions permission
+type Role[T comparable] struct {
+	roleId      T
+	permissions permission[T] // Added [T]
 }
 
-func NewRole(Role T) *Role[T]{
+// Added [T comparable] to the function signature
+func NewRole[T comparable](roleId T) *Role[T] {
 	return &Role[T]{
-		roleId: Role
-		permission : make(map[T]struct{})
+		roleId:      roleId,
+		permissions: make(permission[T]),
 	}
 }
 
-//Add permission
-func (Role *Role[T]) Add(perm T){
-	if Role.permissions == nil {
-		Role.permissions = make(map[T]struct)
+// Add permission (Changed receiver to 'r')
+func (r *Role[T]) Add(perm T) {
+	if r.permissions == nil {
+		r.permissions = make(permission[T])
 	}
-	Role.permissions[perm] = perm 
+	r.permissions[perm] = struct{}{}
 }
 
-//Revoke permission
-func (Role *Role[T]) Revoke(perm T){
-	delete(Role.permissions, perm)
+// Revoke permission
+func (r *Role[T]) Revoke(perm T) {
+	if r.permissions != nil {
+		delete(r.permissions, perm)
+	}
 }
 
-//list permissions
-func (Role *Role[T]) Permissions()(error, []T){
-	if Role.permissions == nil {
-		return error.New("The are no permissions here"),nil
+// List permissions (Flipped return order to match Go standards)
+func (r *Role[T]) Permissions() ([]T, error) {
+	if r.permissions == nil || len(r.permissions) == 0 {
+		return nil, errors.New("there are no permissions here")
 	}
-	if len(Role.permissions) == 0{
-		return error.New("The are no permissions here"),nil
+
+	permissionsList := make([]T, 0, len(r.permissions))
+	for perm := range r.permissions {
+		permissionsList = append(permissionsList, perm) // Fixed append assignment
 	}
-	permissionsList := make([]T, 0, len(Role.permissions))
-	for perm := range Role.permissions{
-		append(permissionList, perm)
-	}
-	return nil, permissionsList
+	return permissionsList, nil
 }
 
-//check if user has a permission
-func (Role *Role[T]) IsPermitted(perm T)bool{
-	if Role.permissions == nil{
+// Check if user has a permission
+func (r *Role[T]) IsPermitted(perm T) bool {
+	if r.permissions == nil {
 		return false
 	}
-	_, exists := Role.permissions[perm]
-	return exists 
+	_, exists := r.permissions[perm]
+	return exists
 }
-
-
-
-
-
-
-
