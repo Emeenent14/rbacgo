@@ -1,6 +1,8 @@
 package rbacgo
 
-import "fmt"
+import (
+	"errors"
+)
 
 type Roles[T comparable] map[T]*Role[T]
 
@@ -17,13 +19,21 @@ func NewRbac[T comparable]() *rbacgo[T] {
 }
 
 //Add role
-func (rbac *rbacgo[T]) AddRole(role *Role[T]){
-	rbac.roles[role.roleId] = role	
+func (rbac *rbacgo[T]) AddRole(role *Role[T]) error {
+	if _, exists := rbac.roles[role.roleId]; !exists {
+		rbac.roles[role.roleId] = role
+		return nil
+	}
+	return errors.New("This role already exists")
 }
 
 //Remove role
-func (rbac *rbacgo[T]) RemoveRole(roleId T){
+func (rbac *rbacgo[T]) RemoveRole(roleId T) error {
+	if _, exists := rbac.roles[roleId]; !exists {
+		return errors.New("The role does not exist")
+	}
 	delete(rbac.roles, roleId)
+	return nil
 }		
 
 //List roles
