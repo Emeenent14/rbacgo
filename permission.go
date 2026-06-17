@@ -1,18 +1,14 @@
 package rbacgo
 
-import ("fmt"
-		"errors"
-)
-
-type permission[T comparable] struct{
+type Permission[T comparable] struct{
 	permissionId T
 }
 
-func NewPermission(permission T) *permssion[T] {
-	return &permission[T]{permissionId : permission}
+func NewPermission[T comparable](permission T) *Permission[T] {
+	return &Permission[T]{permissionId : permission}
 }
 
 // match
-func (perm *permission[T comparable]) Match(OtherPerm T)bool{
-	perm.permissionId == OtherPerm
+func (perm *Permission[T]) Match(Other T)bool{
+	return perm.permissionId == Other
 }
