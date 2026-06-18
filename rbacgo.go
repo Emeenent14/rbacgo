@@ -76,3 +76,22 @@ func (rbac *RBAC[T]) RemoveParent(parentId, childId T)error{
 	delete(rbac.parents[childId], parentId)
 	return nil
 } 
+
+func (rbac *RBAC[T]) IsGranted(r T, permission T) bool {
+	return rbac.isGrantedDFS(r, permission)
+}
+
+//Check permission (depth first search)
+func (rbac *RBAC[T]) isGrantedDFS(r T, permission T) bool {
+	role, exists := rbac.roles[r]
+	if exists && role.IsPermitted(permission) {
+		return true
+	}
+
+	for subrole := range rbac.parents[r] {
+		if rbac.isGrantedDFS(subrole, permission) {
+			return true
+		}
+	}
+	return false
+}
