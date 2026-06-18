@@ -30,6 +30,9 @@ func (rbac *RBAC[T]) AddRole(role *Role[T]) error {
 	rbac.mu.Lock()
 	defer rbac.mu.Unlock()
 
+	if rbac.roles == nil {
+		rbac.roles =  make(Roles[T])
+	}
 	if _, exists := rbac.roles[role.roleId]; !exists {
 		rbac.roles[role.roleId] = role
 		return nil
@@ -97,12 +100,11 @@ func (rbac *RBAC[T]) RemoveParent(parentId, childId T)error{
 func (rbac *RBAC[T]) IsGranted(r T, permission T) bool {
 	rbac.mu.RLock()
 	defer rbac.mu.RUnlock()
-	
+
 	visited := make(map[T]struct{})
 	return rbac.isGrantedDFS(r, permission, visited)
 }
 
-//Check permission (depth first search)
 // Check permission (depth first search)
 func (rbac *RBAC[T]) isGrantedDFS(r T, permission T, visited map[T]struct{}) bool {
 	if _, exists := visited[r]; exists {
