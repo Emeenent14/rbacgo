@@ -5,16 +5,18 @@ import (
 	"sync"
 )
 
-// Fixed typo in name and made it consistent
+// permission represents a unique set of permissions.
 type permission[T comparable] map[T]struct{}
 
+// Role represents a system role containing a unique set of permissions.
+// It is thread-safe.
 type Role[T comparable] struct {
 	roleId      T
-	permissions permission[T] // Added [T]
-	mu sync.RWMutex
+	permissions permission[T]
+	mu          sync.RWMutex
 }
 
-// Added [T comparable] to the function signature
+// NewRole constructs and returns a new Role instance with the specified role ID.
 func NewRole[T comparable](roleId T) *Role[T] {
 	return &Role[T]{
 		roleId:      roleId,
@@ -22,7 +24,7 @@ func NewRole[T comparable](roleId T) *Role[T] {
 	}
 }
 
-// Add permission (Changed receiver to 'r')
+// Add grants a permission to the role.
 func (r *Role[T]) Add(perm T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -33,7 +35,7 @@ func (r *Role[T]) Add(perm T) {
 	r.permissions[perm] = struct{}{}
 }
 
-// Revoke permission
+// Revoke removes a permission from the role.
 func (r *Role[T]) Revoke(perm T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -43,38 +45,31 @@ func (r *Role[T]) Revoke(perm T) {
 	}
 }
 
-// List permissions (Flipped return order to match Go standards)
+// Permissions returns a slice of all permissions directly granted to this role.
+// It returns an error if the role has no permissions.
 func (r *Role[T]) Permissions() ([]T, error) {
-	r.mu.RLock()	//Allow readers, block writers 
-	defer r.mu.Unlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
-	if len(r.permissions) == 0 {//len returns ZERO for a nil map
+	if len(r.permissions) == 0 {
 		return nil, errors.New("there are no permissions here")
 	}
 
 	permissionsList := make([]T, 0, len(r.permissions))
 	for perm := range r.permissions {
-		permissionsList = append(permissionsList, perm) // Fixed append assignment
+		permissionsList = append(permissionsList, perm)
 	}
 	return permissionsList, nil
 }
 
-// Check if user has a permission
+// IsPermitted checks if the role directly possesses the specified permission.
 func (r *Role[T]) IsPermitted(perm T) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	if r.permissions == nil {
 		return false
 	}
 	_, exists := r.permissions[perm]
 	return exists
 }
-
-
-//identifiers should be named using camelCase as opposed to types which should
-//be named using PascalCase. Also, the struct name should be capitalized to make 
-// it public and accessible outside the package.
-
-//when handling errors using multiple retunn values, the error should be the last return value. 
-//This is a common convention in Go and helps to improve readability and consistency across codebases.
