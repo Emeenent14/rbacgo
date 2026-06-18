@@ -56,3 +56,11 @@ func (r *Role[T]) IsPermitted(perm T) bool {
 	_, exists := r.permissions[perm]
 	return exists
 }
+
+
+//identifiers should be named using camelCase as opposed to types which should
+//be named using PascalCase. Also, the struct name should be capitalized to make 
+// it public and accessible outside the package.
+
+//when handling errors using multiple retunn values, the error should be the last return value. 
+//This is a common convention in Go and helps to improve readability and consistency across codebases.
