@@ -2,6 +2,7 @@ package rbacgo
 
 import (
 	"errors"
+	"sync"
 )
 
 // Fixed typo in name and made it consistent
@@ -10,6 +11,7 @@ type permission[T comparable] map[T]struct{}
 type Role[T comparable] struct {
 	roleId      T
 	permissions permission[T] // Added [T]
+	mu sync.RWMutex
 }
 
 // Added [T comparable] to the function signature
@@ -22,6 +24,9 @@ func NewRole[T comparable](roleId T) *Role[T] {
 
 // Add permission (Changed receiver to 'r')
 func (r *Role[T]) Add(perm T) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if r.permissions == nil {
 		r.permissions = make(permission[T])
 	}
@@ -30,6 +35,9 @@ func (r *Role[T]) Add(perm T) {
 
 // Revoke permission
 func (r *Role[T]) Revoke(perm T) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if r.permissions != nil {
 		delete(r.permissions, perm)
 	}
@@ -37,6 +45,9 @@ func (r *Role[T]) Revoke(perm T) {
 
 // List permissions (Flipped return order to match Go standards)
 func (r *Role[T]) Permissions() ([]T, error) {
+	r.mu.RLock()	//Allow readers, block writers 
+	defer r.mu.Unlock()
+
 	if len(r.permissions) == 0 {//len returns ZERO for a nil map
 		return nil, errors.New("there are no permissions here")
 	}
@@ -50,6 +61,9 @@ func (r *Role[T]) Permissions() ([]T, error) {
 
 // Check if user has a permission
 func (r *Role[T]) IsPermitted(perm T) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	
 	if r.permissions == nil {
 		return false
 	}

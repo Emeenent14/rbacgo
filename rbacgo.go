@@ -2,6 +2,7 @@ package rbacgo
 
 import (
 	"errors"
+	"sync"
 )
 
 var (
@@ -14,6 +15,7 @@ type Set[T comparable] map[T]struct{}
 type RBAC[T comparable] struct {
 	roles Roles[T]
 	parents map[T]Set[T]
+	mu sync.RWMutex
 }
 
 func NewRBAC[T comparable]() *RBAC[T] {
@@ -25,6 +27,9 @@ func NewRBAC[T comparable]() *RBAC[T] {
 
 //Add role
 func (rbac *RBAC[T]) AddRole(role *Role[T]) error {
+	rbac.mu.Lock()
+	defer rbac.mu.Unlock()
+
 	if _, exists := rbac.roles[role.roleId]; !exists {
 		rbac.roles[role.roleId] = role
 		return nil
@@ -34,6 +39,9 @@ func (rbac *RBAC[T]) AddRole(role *Role[T]) error {
 
 //Revoke role
 func (rbac *RBAC[T]) RevokeRole(roleId T)error{
+	rbac.mu.Lock()
+	defer rbac.mu.Unlock()
+
 	if _, exists := rbac.roles[roleId]; !exists{
 		return errors.New("The role does not exist")
 	}
@@ -43,6 +51,9 @@ func (rbac *RBAC[T]) RevokeRole(roleId T)error{
 
 //List all role 
 func (rbac *RBAC[T]) ListRoles() []T{
+	rbac.mu.RLock()
+	defer rbac.mu.RUnlock()
+
 	roleSlice := make([]T, 0, len(rbac.roles))
 	for role := range rbac.roles{
 		roleSlice = append(roleSlice, role)
@@ -52,6 +63,9 @@ func (rbac *RBAC[T]) ListRoles() []T{
 
 //add parent 
 func (rbac *RBAC[T]) SetParent(parentId, childId T)error{
+	rbac.mu.Lock()
+	defer rbac.mu.Unlock()
+
 	if _, exists := rbac.roles[parentId];!exists{
 		return errors.New("The parent must be an existing role")
 	}
@@ -67,6 +81,9 @@ func (rbac *RBAC[T]) SetParent(parentId, childId T)error{
 
 //Remove parent
 func (rbac *RBAC[T]) RemoveParent(parentId, childId T)error{
+	rbac.mu.Lock()
+	defer rbac.mu.Unlock()
+
 	if _,exists := rbac.roles[childId]; !exists{
 		return errors.New("The given child role does not exist")
 	}
@@ -78,6 +95,9 @@ func (rbac *RBAC[T]) RemoveParent(parentId, childId T)error{
 } 
 
 func (rbac *RBAC[T]) IsGranted(r T, permission T) bool {
+	rbac.mu.RLock()
+	defer rbac.mu.RUnlock()
+	
 	visited := make(map[T]struct{})
 	return rbac.isGrantedDFS(r, permission, visited)
 }
