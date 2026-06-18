@@ -78,18 +78,28 @@ func (rbac *RBAC[T]) RemoveParent(parentId, childId T)error{
 } 
 
 func (rbac *RBAC[T]) IsGranted(r T, permission T) bool {
-	return rbac.isGrantedDFS(r, permission)
+	visited := make(map[T]struct{})
+	return rbac.isGrantedDFS(r, permission, visited)
 }
 
 //Check permission (depth first search)
-func (rbac *RBAC[T]) isGrantedDFS(r T, permission T) bool {
+// Check permission (depth first search)
+func (rbac *RBAC[T]) isGrantedDFS(r T, permission T, visited map[T]struct{}) bool {
+	if _, exists := visited[r]; exists {
+		return false
+	}
+	visited[r] = struct{}{}
+
 	role, exists := rbac.roles[r]
+	// FIX: Only return early if the role actually HAS the permission.
 	if exists && role.IsPermitted(permission) {
 		return true
 	}
 
-	for subrole := range rbac.parents[r] {
-		if rbac.isGrantedDFS(subrole, permission) {
+	// If we got here, the current role didn't have it. Check its parents.
+	// Renamed 'subrole' to 'parent' for architectural clarity.
+	for parent := range rbac.parents[r] {
+		if rbac.isGrantedDFS(parent, permission, visited) {
 			return true
 		}
 	}
