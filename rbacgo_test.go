@@ -1,0 +1,6 @@
+package rbacgo
+
+// import (
+// 	"testing"
+// )
+

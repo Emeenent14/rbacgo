@@ -37,7 +37,7 @@ func (r *Role[T]) Revoke(perm T) {
 
 // List permissions (Flipped return order to match Go standards)
 func (r *Role[T]) Permissions() ([]T, error) {
-	if r.permissions == nil || len(r.permissions) == 0 {
+	if len(r.permissions) == 0 {//len returns ZERO for a nil map
 		return nil, errors.New("there are no permissions here")
 	}
 

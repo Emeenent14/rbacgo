@@ -1,7 +1,6 @@
 package rbacgo
 
 import (
-	"fmt"
 	"testing"
 )
 func TestNewRole (t *testing.T){
@@ -50,7 +49,7 @@ func TestRole_Revoke(t *testing.T){
 	if _,exists := editor.permissions[perm]; exists{
 		t.Errorf("Permission not Revoked!")
 	}
-	fmt.Println("Permission revoked successfully")
+	t.Log("Permission revoked successfully")
 }
 
 func TestRole_Permissions(t *testing.T){
